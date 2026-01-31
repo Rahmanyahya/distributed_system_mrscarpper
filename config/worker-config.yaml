@@ -2,5 +2,5 @@ server:
   port: 8082
 
 auth:
-  internal_key: "worker_internal_key_2024"
+  internal_key: 
 

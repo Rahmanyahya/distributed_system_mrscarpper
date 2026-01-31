@@ -1,10 +1,10 @@
 identity:
-  internal_key: "$2a$10$NMEELnG2IrgJJ/9gaKp0lOEsdALaMuWwVFTK8GuRCUgcOQRH3l3A6"
+  internal_key: 
 
 controller:
   url: "http://localhost:8080"
 
 worker:
   url: "http://localhost:8082/private"
-  internal_key: "worker_internal_key_2024"
+  internal_key: 
 
