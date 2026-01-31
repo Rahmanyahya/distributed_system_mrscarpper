@@ -1,0 +1,21 @@
+server:
+  controller:
+    port: 8080
+
+database:
+  host: localhost
+  port: 5432
+  user: postgres
+  password: admin123
+  dbname: distributed_system
+
+redis:
+  host: localhost
+  port: 6379
+  user: default
+  password: admin123
+
+security:
+  agent_secret: "bintang_kejora_agent"
+  jwt_secret: "bintang_kejora_jwt"
+  agent_signature: "bintang_kejora_agent_signature"

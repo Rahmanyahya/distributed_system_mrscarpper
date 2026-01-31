@@ -1,0 +1,467 @@
+openapi: 3.0.3
+info:
+  title: Distributed Configuration System API
+  description: |
+    API Documentation untuk Distributed Configuration System.
+
+    Sistem ini menyediakan manajemen konfigurasi terpusat dengan arsitektur Controller-Agent.
+    Controller bertindak sebagai pusat kendali yang mengelola konfigurasi dan agent,
+    sedangkan Agent adalah worker terdistribusi yang mengeksekusi task berdasarkan konfigurasi.
+
+    ## Authentication
+    - **Admin Authentication**: Menggunakan JWT Token. Login ke `/login` untuk mendapatkan token.
+    - **Agent Authentication**: Menggunakan Bearer Token dengan internal key.
+
+    ## Base URLs
+    - Controller Service: `http://localhost:8080`
+    - Agent Service: `http://localhost:8081`
+
+  version: 1.0.0
+  contact:
+    name: Distributed System Team
+    email: support@distributed-system.com
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: http://localhost:8080
+    description: Controller Service (Local Development)
+  - url: http://localhost:8081
+    description: Agent Service (Local Development)
+  - url: http://localhost:8082
+    description: Worker Service (Local Development)
+
+tags:
+  - name: Authentication
+    description: Admin authentication endpoints
+  - name: Configuration
+    description: Configuration management endpoints
+  - name: Agent Management
+    description: Agent registration and management
+  - name: Worker
+    description: Agent worker task execution
+
+paths:
+  /login:
+    post:
+      tags:
+        - Authentication
+      summary: Login admin
+      description: |
+        Melakukan autentikasi admin menggunakan email dan password.
+        Mengembalikan JWT token yang digunakan untuk autentikasi pada endpoint lain.
+      operationId: loginAdmin
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+            examples:
+              default:
+                summary: Default Admin
+                value:
+                  email: admin@distributed-system.com
+                  password: Admin123!@#
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+              example:
+                status: success
+                data: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /config/admin:
+    get:
+      tags:
+        - Configuration
+      summary: Get latest configuration (Admin)
+      description: Mendapatkan konfigurasi terbaru. Membutuhkan JWT token admin.
+      operationId: getLatestConfigAdmin
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+              example:
+                status: success
+                data:
+                  uuid: "550e8400-e29b-41d4-a716-446655440000"
+                  version: 1
+                  config_url: "https://api.example.com/task"
+                  pooling_interval: 30
+                  created_at: "2024-01-15T10:30:00Z"
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    post:
+      tags:
+        - Configuration
+      summary: Create new configuration
+      description: |
+        Membuat konfigurasi baru.
+        Pooling interval minimal 30 detik.
+      operationId: createConfig
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateConfigRequest'
+            example:
+              config_url: "https://api.example.com/task"
+              pooling_interval: 30
+      responses:
+        '200':
+          description: Configuration created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+              example:
+                status: success
+                data: "550e8400-e29b-41d4-a716-446655440000"
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    put:
+      tags:
+        - Configuration
+      summary: Update configuration
+      description: |
+        Update konfigurasi yang sudah ada.
+        Semua field bersifat opsional.
+      operationId: updateConfig
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateConfigRequest'
+            example:
+              config_url: "https://api.example.com/new-task"
+              pooling_interval: 60
+      responses:
+        '200':
+          description: Configuration updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+              example:
+                status: success
+                data: null
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /config/agent:
+    get:
+      tags:
+        - Configuration
+      summary: Get latest configuration (Agent)
+      description: |
+        Mendapatkan konfigurasi terbaru untuk agent.
+        Membutuhkan Bearer token dengan internal key agent.
+      operationId: getLatestConfigAgent
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+              example:
+                status: success
+                data:
+                  uuid: "550e8400-e29b-41d4-a716-446655440000"
+                  version: 1
+                  config_url: "https://api.example.com/task"
+                  pooling_interval: 30
+                  created_at: "2024-01-15T10:30:00Z"
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /agent/admin:
+    get:
+      tags:
+        - Agent Management
+      summary: Generate agent registration token
+      description: |
+        Generate token untuk registrasi agent baru.
+        Membutuhkan JWT token admin.
+      operationId: generateRegistrationToken
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Registration token generated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+              example:
+                status: success
+                data: "registration_token_here"
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /agent/register:
+    post:
+      tags:
+        - Agent Management
+      summary: Register new agent
+      description: |
+        Registrasi agent baru ke sistem.
+        Membutuhkan registration token yang didapat dari endpoint `/agent/admin`.
+      operationId: registerAgent
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Agent registered successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+              example:
+                status: success
+                data: "550e8400-e29b-41d4-a716-446655440000"
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /hit:
+    get:
+      tags:
+        - Worker
+      summary: Execute worker task
+      description: |
+        Endpoint yang digunakan untuk mengeksekusi task berdasarkan konfigurasi saat ini.
+        Worker akan melakukan HTTP GET request ke URL yang ditentukan dalam konfigurasi
+        dan mengembalikan hasilnya ke user.
+
+        **Catatan:** Worker bertindak sebagai proxy untuk menghindari masalah CORS
+        ketika melakukan request ke external API (termasuk HTTPS).
+      servers:
+        - url: http://localhost:8082
+          description: Worker Service (Local Development)
+      operationId: executeTask
+      responses:
+        '200':
+          description: Task executed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  url:
+                    type: string
+                    description: URL yang di-request
+                  status:
+                    type: integer
+                    description: HTTP status code dari response
+                  headers:
+                    type: object
+                    description: Response headers
+                  body:
+                    description: Response body (bisa JSON atau text)
+              example:
+                url: "https://api.example.com/data"
+                status: 200
+                headers:
+                  Content-Type: ["application/json"]
+                body:
+                  message: "success"
+                  data: {"key": "value"}
+        '500':
+          description: Task execution failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                status: error
+                error: Failed to execute task
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        Untuk admin: gunakan JWT token dari endpoint `/login`.
+        Untuk agent: gunakan internal key agent.
+
+  schemas:
+    LoginRequest:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+          description: Email admin
+          example: admin@distributed-system.com
+        password:
+          type: string
+          format: password
+          description: Password admin
+          example: Admin123!@#
+
+    CreateConfigRequest:
+      type: object
+      required:
+        - config_url
+        - pooling_interval
+      properties:
+        config_url:
+          type: string
+          format: uri
+          description: URL untuk task execution
+          example: https://api.example.com/task
+        pooling_interval:
+          type: integer
+          minimum: 30
+          description: Interval fetch config dalam detik (minimal 30)
+          example: 30
+
+    UpdateConfigRequest:
+      type: object
+      properties:
+        config_url:
+          type: string
+          format: uri
+          description: URL untuk task execution
+          example: https://api.example.com/new-task
+        pooling_interval:
+          type: integer
+          minimum: 30
+          description: Interval fetch config dalam detik (minimal 30)
+          example: 60
+
+    SuccessResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [success]
+          example: success
+        data:
+          oneOf:
+            - type: string
+            - type: object
+            - type: array
+            - type: 'null'
+          description: Response data
+
+    ErrorResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [error]
+          example: error
+        error:
+          type: string
+          description: Error message
+          example: Invalid credentials
+
+    ValidationError:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [error]
+          example: error
+        error:
+          type: object
+          description: Validation errors
+          additionalProperties:
+            type: array
+            items:
+              type: string
+
+  responses:
+    BadRequest:
+      description: Bad request - Invalid input or validation error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            status: error
+            error: Invalid request parameters
+
+    Unauthorized:
+      description: Unauthorized - Invalid or missing authentication
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            status: error
+            error: Unauthorized
+
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            status: error
+            error: Resource not found
+
+    InternalServerError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            status: error
+            error: Internal server error

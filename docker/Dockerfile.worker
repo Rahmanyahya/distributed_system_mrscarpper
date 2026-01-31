@@ -1,0 +1,39 @@
+FROM golang:1.24.0-alpine AS builder
+
+RUN apk add --no-cache git make
+
+WORKDIR /app
+
+COPY go.mod go.sum ./
+
+RUN go mod download
+
+COPY . .
+
+RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o worker ./cmd/worker
+
+FROM alpine:latest
+
+RUN apk --no-cache add ca-certificates tzdata wget
+
+ENV TZ=Asia/Jakarta
+
+RUN addgroup -g 1001 appuser && \
+    adduser -D -u 1001 -G appuser appuser
+
+WORKDIR /app
+
+COPY --from=builder /app/worker .
+
+COPY --chown=appuser:appuser config/worker-config.yaml ./config/worker-config.yaml
+
+RUN mkdir -p /home/appuser && chown -R appuser:appuser /home/appuser
+
+USER appuser
+
+EXPOSE 8082
+
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+    CMD wget --no-verbose --tries=1 --spider http://localhost:8082/health || exit 1
+
+CMD ["./worker"]

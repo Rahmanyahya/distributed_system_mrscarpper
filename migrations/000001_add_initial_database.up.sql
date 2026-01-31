@@ -1,0 +1,25 @@
+CREATE TABLE IF NOT EXISTS admin (
+    uuid TEXT PRIMARY KEY NOT NULL,
+    email TEXT NOT NULL,
+    password TEXT NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS config (
+    uuid TEXT PRIMARY KEY NOT NULL,
+    version BIGINT UNIQUE,
+    config_url TEXT NOT NULL,
+    pooling_interval BIGINT NOT NULL DEFAULT 30,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS agents (
+    uuid TEXT PRIMARY KEY NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_admin_email
+ON admin(email);
+
+CREATE INDEX IF NOT EXISTS idx_config_created_at
+ON config(created_at);
