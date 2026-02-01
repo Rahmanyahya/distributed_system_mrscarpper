@@ -1,3 +1,7 @@
+# Architecture
+- Cleancode Domain Driven Design
+- Monorepo (Digunakan unntuk mempermudah maintanance sebuah depedencies)
+
 # Distributed Configuration System
 
 A sophisticated distributed configuration management system built with **Clean Architecture** and **Microservices pattern**, designed for centralized configuration management with real-time synchronization across distributed agents.
