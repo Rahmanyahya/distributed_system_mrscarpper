@@ -43,8 +43,8 @@ func (u *Worker) Hit(ctx context.Context) (any, error) {
 		return nil, errors.Wrap(err, errors.ErrCodeInternal, "failed to create request")
 	}
 
-	req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
-	req.Header.Set("Accept", "*/*")
+	req.Header.Set("User-Agent", "curl/7.81.0")
+	req.Header.Set("Accept", "text/plain")
 
 	resp, err := u.httpClient.Do(req)
     if err != nil {
@@ -52,16 +52,13 @@ func (u *Worker) Hit(ctx context.Context) (any, error) {
     }
     defer resp.Body.Close()
 
-    // BACA BODY-NYA SEKARANG
     bodyBytes, err := io.ReadAll(resp.Body)
     if err != nil {
         return nil, errors.Wrap(err, errors.ErrCodeInternal, "failed to read response body")
     }
 
-    // Jika response adalah JSON, kita unmarshal dulu agar 'any' berisi map/struct
     var result any
     if err := json.Unmarshal(bodyBytes, &result); err != nil {
-        // Jika bukan JSON, kembalikan sebagai string biasa
         log.Printf("[Worker] Task completed: Status %d, Non-JSON response", resp.StatusCode)
         return string(bodyBytes), nil
     }
