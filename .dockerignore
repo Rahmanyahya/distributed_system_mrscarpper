@@ -39,11 +39,6 @@ Thumbs.db
 # Logs
 *.log
 
-# Config (will be mounted as volume)
-config/*.yaml
-!config/config.yaml.example
-!config/agent-config.yaml.example
-
 # Local cache
 config.json
 
